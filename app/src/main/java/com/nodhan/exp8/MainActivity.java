@@ -4,9 +4,9 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
-import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -35,9 +35,8 @@ public class MainActivity extends FragmentActivity implements
         GoogleApiClient.OnConnectionFailedListener,
         OnMapReadyCallback {
 
-    private static final String TAG = "LocationActivity";
-    private static final long INTERVAL = 1000 * 60 * 1; //1 minute
-    private static final long FASTEST_INTERVAL = 1000 * 60 * 1; // 1 minute
+    private static final long INTERVAL = 60000; //1 minute
+    private static final long FASTEST_INTERVAL = 60000; // 1 minute
 
     LocationRequest mLocationRequest;
     GoogleApiClient mGoogleApiClient;
@@ -51,7 +50,6 @@ public class MainActivity extends FragmentActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Log.d(TAG, "onCreate ...............................");
         //show error dialog if GooglePlayServices not available
         if (!isGooglePlayServicesAvailable()) {
             finish();
@@ -69,16 +67,13 @@ public class MainActivity extends FragmentActivity implements
     @Override
     public void onStart() {
         super.onStart();
-        Log.d(TAG, "onStart fired ..............");
         mGoogleApiClient.connect();
     }
 
     @Override
     public void onStop() {
         super.onStop();
-        Log.d(TAG, "onStop fired ..............");
         mGoogleApiClient.disconnect();
-        Log.d(TAG, "isConnected ...............: " + mGoogleApiClient.isConnected());
     }
 
     private boolean isGooglePlayServicesAvailable() {
@@ -95,7 +90,6 @@ public class MainActivity extends FragmentActivity implements
 
     @Override
     public void onConnected(Bundle bundle) {
-        Log.d(TAG, "onConnected - isConnected ...............: " + mGoogleApiClient.isConnected());
         startLocationUpdates();
     }
 
@@ -103,11 +97,10 @@ public class MainActivity extends FragmentActivity implements
         if (
                 ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                         &&
-                ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        PendingResult<Status> pendingResult = LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-        Log.d(TAG, "Location update started ..............: ");
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
 
     @Override
@@ -116,13 +109,11 @@ public class MainActivity extends FragmentActivity implements
     }
 
     @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-        Log.d(TAG, "Connection failed: " + connectionResult.toString());
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
     }
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d(TAG, "Firing onLocationChanged..............................................");
         mCurrentLocation = location;
         mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
         addMarker();
@@ -143,29 +134,20 @@ public class MainActivity extends FragmentActivity implements
         long atTime = mCurrentLocation.getTime();
         mLastUpdateTime = DateFormat.getTimeInstance().format(new Date(atTime));
         mapMarker.setTitle(mLastUpdateTime);
-        Log.d(TAG, "Marker added.............................");
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 13));
-        Log.d(TAG, "Zoom done.............................");
-        Log.d(TAG, "ShPr started.......................");
         int count = mapData.getInt("count", 0);
-        Log.d(TAG, "count " + count + "addMarkers():before");
         SharedPreferences.Editor editor = mapData.edit();
         editor.putString("latitude" + count, mCurrentLocation.getLatitude() + "");
         editor.putString("longitude" + count, mCurrentLocation.getLongitude() + "");
         editor.putLong("time" + count, atTime);
-        Log.d(TAG, "time" + count + ": " + atTime + " addMarker()");
         editor.putInt("count", ++count);
-        Log.d(TAG, "count " + count + "addMarkers():after");
         editor.apply();
-        Log.d(TAG, "ShPr ended.......................");
     }
 
     private void addSavedMarkers() {
         mapData = getSharedPreferences("mapData", MODE_PRIVATE);
-        Log.d(TAG, "addSavedMarkers() fired.......................");
 
         int limit = mapData.getInt("count", 0);
-        Log.d(TAG, "count " + limit + "addSavedMarkers()");
         for (int i = 0; i < limit; i++) {
             MarkerOptions options = new MarkerOptions();
 
@@ -178,12 +160,9 @@ public class MainActivity extends FragmentActivity implements
             options.position(currentLatLng);
             Marker mapMarker = googleMap.addMarker(options);
             long atTime = mapData.getLong("time" + i, 0);
-            Log.d(TAG, "time" + i + ": " + atTime + " addSavedMarker()");
             mLastUpdateTime = DateFormat.getTimeInstance().format(new Date(atTime));
             mapMarker.setTitle(mLastUpdateTime);
-            Log.d(TAG, "Marker added.............................");
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 13));
-            Log.d(TAG, "Zoom done.............................");
         }
     }
 
@@ -194,16 +173,10 @@ public class MainActivity extends FragmentActivity implements
     @Override
     protected void onPause() {
         super.onPause();
-        stopLocationUpdates();
-    }
-
-    protected void stopLocationUpdates() {
         if (mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(
                     mGoogleApiClient, this);
-            Log.d(TAG, "Location update stopped .......................");
         }
-        Log.d(TAG, "Not connected .......................");
     }
 
     @Override
@@ -211,7 +184,6 @@ public class MainActivity extends FragmentActivity implements
         super.onResume();
         if (mGoogleApiClient.isConnected()) {
             startLocationUpdates();
-            Log.d(TAG, "Location update resumed .....................");
         }
     }
 
