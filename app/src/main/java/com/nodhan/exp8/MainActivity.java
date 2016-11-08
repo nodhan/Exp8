@@ -11,8 +11,6 @@ import android.support.v4.app.FragmentActivity;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.PendingResult;
-import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
@@ -160,7 +158,10 @@ public class MainActivity extends FragmentActivity implements
             options.position(currentLatLng);
             Marker mapMarker = googleMap.addMarker(options);
             long atTime = mapData.getLong("time" + i, 0);
-            mLastUpdateTime = DateFormat.getTimeInstance().format(new Date(atTime));
+            Date today = new Date();
+            Date savedDate = new Date(atTime);
+            if (today.after(savedDate))
+                mLastUpdateTime = DateFormat.getDateTimeInstance().format(savedDate);
             mapMarker.setTitle(mLastUpdateTime);
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 13));
         }
